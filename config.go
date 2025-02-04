@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
+	"github.com/tiamxu/kairo/model"
 	"github.com/tiamxu/kit/llm"
 	"github.com/tiamxu/kit/log"
 	"github.com/tiamxu/kit/sql"
@@ -38,8 +39,8 @@ func (c *Config) Initial() (err error) {
 		log.DefaultLogger().SetLevel(level)
 	}
 
-	if _, err := sql.Connect(cfg.DB); err != nil {
-		return err
+	if err := model.Init(cfg.DB); err != nil {
+		// return err
 	}
 	return nil
 }
