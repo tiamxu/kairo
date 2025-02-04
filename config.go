@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/tiamxu/kairo/model"
+	"github.com/tiamxu/kairo/logic/model"
 	"github.com/tiamxu/kit/llm"
 	"github.com/tiamxu/kit/log"
 	"github.com/tiamxu/kit/sql"
