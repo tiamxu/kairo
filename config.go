@@ -40,7 +40,7 @@ func (c *Config) Initial() (err error) {
 	}
 
 	if err := model.Init(cfg.DB); err != nil {
-		// return err
+		return err
 	}
 	return nil
 }
