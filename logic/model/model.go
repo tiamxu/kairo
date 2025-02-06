@@ -84,3 +84,12 @@ func insertZeroDeletedTsM(m bson.M) bson.M {
 	m["deleted_ts"] = 0
 	return m
 }
+
+type QaPairs struct {
+	Id        int64  `key:"pri" json:"id,omitempty"`
+	Question  string `json:"question,omitempty"`
+	Answer    string `json:"answer,omitempty"`
+	UpdatedTs int64  `json:"updated_ts,omitempty"`
+	CreatedTs int64  `json:"created_ts,omitempty"`
+	DeletedTs int64  `json:"deleted_ts,omitempty"`
+}

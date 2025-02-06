@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tiamxu/kit/log"
-
-	"github.com/gin-gonic/gin"
 	"github.com/tiamxu/kit/llm"
+	"github.com/tiamxu/kit/log"
 	"github.com/tiamxu/kit/vectorstore"
 	"github.com/tmc/langchaingo/embeddings"
 	"github.com/tmc/langchaingo/llms"
@@ -100,12 +98,4 @@ func initializeVectorStore(ctx context.Context, cfg vectorstore.VectorStoreConfi
 	}
 
 	return store, nil
-}
-func RegisterHttpRoute(r *gin.Engine) {
-	r.GET("/health", func(c *gin.Context) {
-		c.String(200, "OK")
-	})
-	r.GET("/ping", func(c *gin.Context) {
-		c.String(200, "pong")
-	})
 }
