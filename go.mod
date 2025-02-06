@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/koding/multiconfig v0.0.0-20171124222453-69c27309b2d7
 	github.com/sirupsen/logrus v1.9.3
-	github.com/tiamxu/kit v0.0.0-20250204110140-2f66af9dfb18
+	github.com/tiamxu/kit v0.0.0-20250204141037-b52111688b25
 	github.com/tmc/langchaingo v0.1.12
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 )
