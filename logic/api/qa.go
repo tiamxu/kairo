@@ -36,8 +36,10 @@ type Response struct {
 	Error   string      `json:"error,omitempty"`
 }
 
-func (h *Handler) Query(c *gin.Context) {
+func Query(c *gin.Context) {
 	var req QueryRequest
+	modelService := service.Service{}
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, Response{Success: false, Error: "无效的请求体"})
 		return
@@ -52,7 +54,7 @@ func (h *Handler) Query(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 
-	answer, err := h.modelService.QueryWithRetrieve(ctx, req.Query, req.TopK)
+	answer, err := modelService.QueryWithRetrieve(ctx, req.Query, req.TopK)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			c.JSON(http.StatusGatewayTimeout, Response{Success: false, Error: "请求超时"})
@@ -65,14 +67,16 @@ func (h *Handler) Query(c *gin.Context) {
 	c.JSON(http.StatusOK, Response{Success: true, Data: answer})
 }
 
-func (h *Handler) StoreQA(c *gin.Context) {
+func StoreQA(c *gin.Context) {
 	var req QAPairRequest
+	modelService := service.Service{}
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, Response{Success: false, Error: "无效的请求体"})
 		return
 	}
 
-	err := h.modelService.StoreQA(c.Request.Context(), req.Question, req.Answer)
+	err := modelService.StoreQA(c.Request.Context(), req.Question, req.Answer)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, Response{Success: false, Error: err.Error()})
 		return
@@ -81,11 +85,13 @@ func (h *Handler) StoreQA(c *gin.Context) {
 	c.JSON(http.StatusOK, Response{Success: true})
 }
 
-func (h *Handler) GetQuestions(c *gin.Context) {
+func GetQuestions(c *gin.Context) {
+	modelService := service.Service{}
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	questions, err := h.modelService.GetStoredQuestions(ctx)
+	questions, err := modelService.GetStoredQuestions(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, Response{Success: false, Error: err.Error()})
 		return
