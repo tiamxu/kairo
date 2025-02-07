@@ -36,7 +36,7 @@ type Response struct {
 	Error   string      `json:"error,omitempty"`
 }
 
-func Query(c *gin.Context) {
+func QueryHandler(c *gin.Context) {
 	var req QueryRequest
 	modelService := service.Service{}
 
@@ -56,10 +56,6 @@ func Query(c *gin.Context) {
 
 	answer, err := modelService.QueryWithRetrieve(ctx, req.Query, req.TopK)
 	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			c.JSON(http.StatusGatewayTimeout, Response{Success: false, Error: "请求超时"})
-			return
-		}
 		c.JSON(http.StatusInternalServerError, Response{Success: false, Error: err.Error()})
 		return
 	}
@@ -67,7 +63,7 @@ func Query(c *gin.Context) {
 	c.JSON(http.StatusOK, Response{Success: true, Data: answer})
 }
 
-func StoreQA(c *gin.Context) {
+func StoreQAHandler(c *gin.Context) {
 	var req QAPairRequest
 	modelService := service.Service{}
 
@@ -85,7 +81,7 @@ func StoreQA(c *gin.Context) {
 	c.JSON(http.StatusOK, Response{Success: true})
 }
 
-func GetQuestions(c *gin.Context) {
+func GetQuestionsHandler(c *gin.Context) {
 	modelService := service.Service{}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)

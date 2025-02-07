@@ -13,9 +13,9 @@ import (
 )
 
 type LLMService struct {
-	llm         llms.Model
-	embedder    embeddings.Embedder
-	vectorStore vectorstore.VectorStore
+	llm      llms.Model
+	embedder embeddings.Embedder
+	store    vectorstore.VectorStore
 }
 
 //	func NewLLMService() *LLMService {
@@ -62,7 +62,7 @@ func (s *LLMService) setupVectorStore(ctx context.Context, cfg vectorstore.Vecto
 		return fmt.Errorf("failed to initialize vector store: %w", err)
 	}
 
-	s.vectorStore = vectorStore
+	s.store = vectorStore
 	return nil
 }
 func initializeLLMAndEmbedder(cfg *llm.Config) (llms.Model, embeddings.Embedder, error) {

@@ -12,7 +12,7 @@ func RegisterHttpRoute(r *gin.Engine) {
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
 	})
-	r.POST("/api/query", api.Query)
-	r.POST("/api/store", api.StoreQA)
-	r.POST("/api/questions", api.GetQuestions)
+	r.POST("/api/query", api.QueryHandler)
+	r.POST("/api/store", api.StoreQAHandler)
+	r.POST("/api/questions", api.GetQuestionsHandler)
 }

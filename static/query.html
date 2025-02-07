@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>查询</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            min-height: 100px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            position: relative;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav style="margin-bottom: 20px; padding: 15px; background: #f0f0f0; border-radius: 4px;">
+            <a href="/static/index.html" style="margin-right: 15px; padding: 8px 15px; text-decoration: none; color: white; background-color: #007bff; border-radius: 4px; font-size: 16px;">回到首页</a>
+            <a href="/static/query.html" style="margin-right: 15px; padding: 8px 15px; text-decoration: none; color: white; background-color: #28a745; border-radius: 4px; font-size: 16px;">查询</a>
+            <a href="/static/store.html" style="padding: 8px 15px; text-decoration: none; color: white; background-color: #dc3545; border-radius: 4px; font-size: 16px;">录入</a>
+        </nav>
+        <h1>知识库查询</h1>
+        
+        <div class="questions-section" style="margin-bottom: 20px;">
+            <h3>已有问题：</h3>
+            <ul id="questions-list" style="list-style: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;"></ul>
+        </div>
+
+        <div class="form-group">
+            <label for="query">输入问题：</label>
+            <textarea id="query" placeholder="请输入您的问题"></textarea>
+        </div>
+        <button onclick="submitQuery()" id="query-btn">
+            查询
+            <span class="loading" id="loading" style="display: none;"></span>
+        </button>
+        <div class="response" id="response"></div>
+    </div>
+
+    <script>
+        // 获取并显示问题列表
+        async function loadQuestions() {
+            try {
+                const response = await fetch('/api/questions');
+                const data = await response.json();
+                
+                const questionsList = document.getElementById('questions-list');
+                questionsList.innerHTML = ''; // 清空现有内容
+                
+                if (data.data && data.data.length > 0) {
+                    data.data.forEach(question => {
+                        const li = document.createElement('li');
+                        li.textContent = question;
+                        li.style.padding = '5px 0';
+                        li.style.cursor = 'pointer';
+                        li.onclick = () => {
+                            document.getElementById('query').value = question;
+                        };
+                        questionsList.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.textContent = '暂无存储的问题';
+                    questionsList.appendChild(li);
+                }
+            } catch (error) {
+                console.error('获取问题列表失败:', error);
+            }
+        }
+
+        // 页面加载时获取问题列表
+        window.onload = loadQuestions;
+    </script>
+
+    <script>
+        async function submitQuery() {
+            const query = document.getElementById('query').value;
+            const responseDiv = document.getElementById('response');
+            const queryBtn = document.getElementById('query-btn');
+            const loading = document.getElementById('loading');
+            
+            if (!query) {
+                responseDiv.textContent = '请输入问题';
+                return;
+            }
+
+            // 显示loading并禁用按钮
+            queryBtn.disabled = true;
+            loading.style.display = 'inline-block';
+            responseDiv.textContent = '查询中...';
+
+            try {
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        top_k: 1
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    responseDiv.textContent = '查询失败：' + data.error;
+                } else {
+                    responseDiv.textContent = data.data;
+                }
+            } catch (error) {
+                responseDiv.textContent = '请求失败：' + error.message;
+            } finally {
+                // 隐藏loading并启用按钮
+                queryBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

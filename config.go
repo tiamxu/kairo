@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
+	"time"
+
 	"github.com/sirupsen/logrus"
+	"github.com/tiamxu/kairo/logic"
 	"github.com/tiamxu/kairo/logic/model"
 	"github.com/tiamxu/kit/llm"
 	"github.com/tiamxu/kit/log"
@@ -32,13 +36,21 @@ func (c *Config) Initial() (err error) {
 			log.Printf("config initialed, env: %s", cfg.ENV)
 		}
 	}()
-
+	//日志
 	if level, err := logrus.ParseLevel(c.LogLevel); err != nil {
 		return err
 	} else {
 		log.DefaultLogger().SetLevel(level)
 	}
+	// llm服务
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	_, err = logic.NewLLMService(ctx, &cfg.LLMConfig, cfg.VectorStoreConfig)
+	if err != nil {
+		log.Fatalf("Model service initialization failed: %v", err)
 
+	}
+	//数据库
 	if err := model.Init(cfg.DB); err != nil {
 		return err
 	}

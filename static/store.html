@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>向量存储</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            min-height: 100px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            position: relative;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav style="margin-bottom: 20px; padding: 15px; background: #f0f0f0; border-radius: 4px;">
+            <a href="/static/index.html" style="margin-right: 15px; padding: 8px 15px; text-decoration: none; color: white; background-color: #007bff; border-radius: 4px; font-size: 16px;">回到首页</a>
+            <a href="/static/query.html" style="margin-right: 15px; padding: 8px 15px; text-decoration: none; color: white; background-color: #28a745; border-radius: 4px; font-size: 16px;">查询</a>
+            <a href="/static/store.html" style="padding: 8px 15px; text-decoration: none; color: white; background-color: #dc3545; border-radius: 4px; font-size: 16px;">录入</a>
+        </nav>
+        <h1>知识库问题录入</h1>
+        <div class="form-group">
+            <label for="question">输入问题：</label>
+            <textarea id="question" placeholder="请输入您的问题"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="answer">输入问题修饰：</label>
+            <textarea id="answer" placeholder="请输入对应的提示词"></textarea>
+        </div>
+        <button onclick="submitStore()" id="store-btn">
+            提交
+            <span class="loading" id="loading" style="display: none;"></span>
+        </button>
+        <div class="response" id="response"></div>
+    </div>
+
+    <script>
+        async function submitStore() {
+            const question = document.getElementById('question').value;
+            const answer = document.getElementById('answer').value;
+            const responseDiv = document.getElementById('response');
+            const storeBtn = document.getElementById('store-btn');
+            const loading = document.getElementById('loading');
+            
+            if (!question || !answer) {
+                responseDiv.textContent = '请完整填写问题和答案';
+                return;
+            }
+
+            // 显示loading并禁用按钮
+            storeBtn.disabled = true;
+            loading.style.display = 'inline-block';
+            responseDiv.textContent = '存储中...';
+
+            try {
+                const response = await fetch('/api/store', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        answer: answer
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    responseDiv.textContent = '存储失败：' + data.error;
+                } else {
+                    responseDiv.textContent = '存储成功';
+                }
+            } catch (error) {
+                responseDiv.textContent = '请求失败：' + error.message;
+            } finally {
+                // 隐藏loading并启用按钮
+                storeBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
