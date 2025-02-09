@@ -29,7 +29,7 @@ func main() {
 	// 初始化 service
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	modelService, err := service.NewLLMService(ctx, cfg.LLMConfig, cfg.VectorStoreConfig)
+	modelService, err := service.NewLLMService(ctx, cfg.LLMConfig, cfg.VectorStoreConfig, cfg.DB)
 	if err != nil {
 		log.Fatalf("Model service initialization failed: %v", err)
 	}

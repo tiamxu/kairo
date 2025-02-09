@@ -6,10 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"database/sql"
-
 	"github.com/tiamxu/kit/llm"
 	"github.com/tiamxu/kit/log"
+	"github.com/tiamxu/kit/sql"
 
 	"github.com/tiamxu/kit/vectorstore"
 	"github.com/tmc/langchaingo/embeddings"
@@ -24,14 +23,14 @@ type Service struct {
 	db       *sql.DB
 }
 
-func NewLLMService(ctx context.Context, cfg *llm.Config, vectorStoreCfg *vectorstore.VectorStoreConfig) (*Service, error) {
+func NewLLMService(ctx context.Context, cfg *llm.Config, vectorStoreCfg *vectorstore.VectorStoreConfig, dbConfig *sql.Config) (*Service, error) {
 	service := &Service{}
-	if err := service.Initialize(context.Background(), cfg, vectorStoreCfg); err != nil {
+	if err := service.Initialize(context.Background(), cfg, vectorStoreCfg, dbConfig); err != nil {
 		return nil, err
 	}
 	return service, nil
 }
-func (s *Service) Initialize(ctx context.Context, cfg *llm.Config, vectorStoreCfg *vectorstore.VectorStoreConfig) error {
+func (s *Service) Initialize(ctx context.Context, cfg *llm.Config, vectorStoreCfg *vectorstore.VectorStoreConfig, dbConfig *sql.Config) error {
 	start := time.Now()
 	defer func() {
 		log.Printf("Model initialization completed in %v", time.Since(start))
@@ -47,16 +46,30 @@ func (s *Service) Initialize(ctx context.Context, cfg *llm.Config, vectorStoreCf
 	s.llm = llm
 	s.embedder = embedder
 	s.store = store
-	dns := "root:JLZqwDlJi5rY8WM@tcp(120.24.61.231:13306)/test?parseTime=true&charset=utf8mb4"
-	db, err := sql.Open("mysql", dns)
+	// dns := "root:JLZqwDlJi5rY8WM@tcp(120.24.61.231:13306)/test?parseTime=true&charset=utf8mb4"
+	// db, err := sql.Open("mysql", dns)
 
+	// 初始化数据库连接
+	db, err := s.initializeDB(dbConfig)
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
+		return fmt.Errorf("database initialization failed: %w", err)
 	}
 	s.db = db
 	return nil
 }
 
+// 新增数据库初始化方法
+func (s *Service) initializeDB(cfg *sql.Config) (*sql.DB, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("database config is nil")
+	}
+
+	db, err := sql.Connect(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	return db, nil
+}
 func (s *Service) initializeLLMAndEmbedder(cfg *llm.Config) (llms.Model, embeddings.Embedder, error) {
 	if cfg == nil {
 		return nil, nil, fmt.Errorf("llm config is nil")
@@ -155,14 +168,18 @@ func (s *Service) RetrieveAnswer(ctx context.Context, query string, topK int) ([
 
 	// 4. Collect answers
 	var answers []string
-	for rows.Next() {
-		var answer string
-		if err := rows.Scan(&answer); err != nil {
-			return nil, fmt.Errorf("failed to scan answer: %w", err)
-		}
-		answers = append(answers, answer)
+	// for rows.Next() {
+	// 	var answer string
+	// 	if err := rows.Scan(&answer); err != nil {
+	// 		return nil, fmt.Errorf("failed to scan answer: %w", err)
+	// 	}
+	// 	answers = append(answers, answer)
+	// }
+	querySql := fmt.Sprintf("SELECT answer FROM qa_pairs WHERE id IN (%s)", idList)
+	err = s.db.SelectContext(ctx, &answers, querySql)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query answers: %w", err)
 	}
-
 	return answers, nil
 }
 
@@ -210,6 +227,7 @@ func (s *Service) StoreQA(ctx context.Context, question string, answer string) e
 	result, err := s.db.ExecContext(ctx,
 		"INSERT INTO qa_pairs (question, answer) VALUES (?, ?)",
 		question, answer)
+
 	if err != nil {
 		return fmt.Errorf("failed to store answer: %w", err)
 	}
@@ -232,21 +250,29 @@ func (s *Service) StoreQA(ctx context.Context, question string, answer string) e
 	return err
 }
 
+// func (s *Service) GetStoredQuestions(ctx context.Context) ([]string, error) {
+// 	rows, err := s.db.QueryContext(ctx, "SELECT question FROM qa_pairs ORDER BY created_at DESC")
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to query questions: %w", err)
+// 	}
+// 	defer rows.Close()
+
+// 	var questions []string
+// 	for rows.Next() {
+// 		var question string
+// 		if err := rows.Scan(&question); err != nil {
+// 			return nil, fmt.Errorf("failed to scan question: %w", err)
+// 		}
+// 		questions = append(questions, question)
+// 	}
+// 	return questions, nil
+// }
+
 func (s *Service) GetStoredQuestions(ctx context.Context) ([]string, error) {
-
-	rows, err := s.db.QueryContext(ctx, "SELECT question FROM qa_pairs ORDER BY created_at DESC")
-	if err != nil {
+	questions := []string{}
+	query := "SELECT question FROM qa_pairs ORDER BY created_at DESC"
+	if err := s.db.SelectContext(ctx, &questions, query); err != nil {
 		return nil, fmt.Errorf("failed to query questions: %w", err)
-	}
-	defer rows.Close()
-
-	var questions []string
-	for rows.Next() {
-		var question string
-		if err := rows.Scan(&question); err != nil {
-			return nil, fmt.Errorf("failed to scan question: %w", err)
-		}
-		questions = append(questions, question)
 	}
 	return questions, nil
 }
