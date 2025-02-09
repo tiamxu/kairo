@@ -402,8 +402,8 @@ github.com/testcontainers/testcontainers-go/modules/milvus v0.31.0 h1:0wTakit4o9
 github.com/testcontainers/testcontainers-go/modules/milvus v0.31.0/go.mod h1:ta9EDZd+lKBMU7enljbNu5H1G495fnT0dw7hmsCPWa0=
 github.com/testcontainers/testcontainers-go/modules/qdrant v0.31.0 h1:5bYvi8lSqDnJrO1w5W3AFaSsRe4ZDv4TPj1tsaBEz20=
 github.com/testcontainers/testcontainers-go/modules/qdrant v0.31.0/go.mod h1:/3GyFMTSiem1j5mfI/96MufdNvB3A8Xqa+xnV4CUR4A=
-github.com/tiamxu/kit v0.0.0-20250204141037-b52111688b25 h1:fYdkdIDApRQd3k+NtDRRE1Wi41uWawwSOwKFDenzDUI=
-github.com/tiamxu/kit v0.0.0-20250204141037-b52111688b25/go.mod h1:23uxkTrzzH7qQbChs50FUEtRe/rfSFW8cmWgSYomkUs=
+github.com/tiamxu/kit v0.0.0-20250209074912-d17f53979a6c h1:HmdN0G+/HMRBtK+3ljy5xGZdX8jRSp2AufwZD6RQdu0=
+github.com/tiamxu/kit v0.0.0-20250209074912-d17f53979a6c/go.mod h1:23uxkTrzzH7qQbChs50FUEtRe/rfSFW8cmWgSYomkUs=
 github.com/tidwall/gjson v1.14.4 h1:uo0p8EbA09J7RQaflQ1aBRffTR7xedD2bcIVSYxLnkM=
 github.com/tidwall/gjson v1.14.4/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=

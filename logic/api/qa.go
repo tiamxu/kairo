@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tiamxu/kairo/logic/service"
-
 	"github.com/gin-gonic/gin"
+	"github.com/tiamxu/kairo/logic/service"
 )
 
 type Handler struct {
@@ -36,9 +35,8 @@ type Response struct {
 	Error   string      `json:"error,omitempty"`
 }
 
-func QueryHandler(c *gin.Context) {
+func (h *Handler) QueryHandler(c *gin.Context) {
 	var req QueryRequest
-	modelService := service.Service{}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, Response{Success: false, Error: "无效的请求体"})
@@ -53,8 +51,7 @@ func QueryHandler(c *gin.Context) {
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
-
-	answer, err := modelService.QueryWithRetrieve(ctx, req.Query, req.TopK)
+	answer, err := h.modelService.QueryWithRetrieve(ctx, req.Query, req.TopK)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, Response{Success: false, Error: err.Error()})
 		return
@@ -63,16 +60,15 @@ func QueryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, Response{Success: true, Data: answer})
 }
 
-func StoreQAHandler(c *gin.Context) {
+func (h *Handler) StoreQAHandler(c *gin.Context) {
 	var req QAPairRequest
-	modelService := service.Service{}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, Response{Success: false, Error: "无效的请求体"})
 		return
 	}
 
-	err := modelService.StoreQA(c.Request.Context(), req.Question, req.Answer)
+	err := h.modelService.StoreQA(c.Request.Context(), req.Question, req.Answer)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, Response{Success: false, Error: err.Error()})
 		return
@@ -81,13 +77,12 @@ func StoreQAHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, Response{Success: true})
 }
 
-func GetQuestionsHandler(c *gin.Context) {
-	modelService := service.Service{}
+func (h *Handler) GetQuestionsHandler(c *gin.Context) {
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	questions, err := modelService.GetStoredQuestions(ctx)
+	questions, err := h.modelService.GetStoredQuestions(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, Response{Success: false, Error: err.Error()})
 		return

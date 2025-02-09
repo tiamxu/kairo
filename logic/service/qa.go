@@ -2,10 +2,11 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
+
+	"database/sql"
 
 	"github.com/tiamxu/kit/llm"
 	"github.com/tiamxu/kit/log"
@@ -17,56 +18,46 @@ import (
 )
 
 type Service struct {
-	llm   llms.Model
-	db    *sql.DB
-	store vectorstore.VectorStore
+	llm      llms.Model
+	embedder embeddings.Embedder
+	store    vectorstore.VectorStore
+	db       *sql.DB
 }
 
-func NewService(ctx context.Context, cfg *llm.Config, db *sql.DB, vectorStoreCfg vectorstore.VectorStoreConfig) (*Service, error) {
-	service := &Service{
-		db: db,
-	}
-	if err := service.Initialize(ctx, cfg, vectorStoreCfg); err != nil {
+func NewLLMService(ctx context.Context, cfg *llm.Config, vectorStoreCfg *vectorstore.VectorStoreConfig) (*Service, error) {
+	service := &Service{}
+	if err := service.Initialize(context.Background(), cfg, vectorStoreCfg); err != nil {
 		return nil, err
 	}
 	return service, nil
 }
-func (s *Service) Initialize(ctx context.Context, cfg *llm.Config, vectorStoreCfg vectorstore.VectorStoreConfig) error {
+func (s *Service) Initialize(ctx context.Context, cfg *llm.Config, vectorStoreCfg *vectorstore.VectorStoreConfig) error {
 	start := time.Now()
 	defer func() {
-		log.Printf("Service initialization completed in %v", time.Since(start))
+		log.Printf("Model initialization completed in %v", time.Since(start))
 	}()
-
-	if err := s.setupLLMAndEmbedder(cfg); err != nil {
+	llm, embedder, err := s.initializeLLMAndEmbedder(cfg)
+	if err != nil {
 		return fmt.Errorf("model initialization failed: %w", err)
 	}
-
-	if err := s.setupVectorStore(ctx, vectorStoreCfg); err != nil {
+	store, err := s.initializeVectorStore(ctx, vectorStoreCfg, embedder)
+	if err != nil {
 		return fmt.Errorf("vector store initialization failed: %w", err)
 	}
-
-	return nil
-}
-func (s *Service) setupLLMAndEmbedder(cfg *llm.Config) error {
-	llm, _, err := initializeLLMAndEmbedder(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to initialize LLM and embedder: %w", err)
-	}
-
 	s.llm = llm
-	// 注意：这里不需要直接使用 embedder，因为我们只需要它来初始化 vector store
-	return nil
-}
-func (s *Service) setupVectorStore(ctx context.Context, cfg vectorstore.VectorStoreConfig) error {
-	vectorStore, err := initializeVectorStore(ctx, cfg, nil) // 如果不直接使用 embedder，则传入 nil
-	if err != nil {
-		return fmt.Errorf("failed to initialize vector store: %w", err)
-	}
+	s.embedder = embedder
+	s.store = store
+	dns := "root:JLZqwDlJi5rY8WM@tcp(120.24.61.231:13306)/test?parseTime=true&charset=utf8mb4"
+	db, err := sql.Open("mysql", dns)
 
-	s.store = vectorStore
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	s.db = db
 	return nil
 }
-func initializeLLMAndEmbedder(cfg *llm.Config) (llms.Model, embeddings.Embedder, error) {
+
+func (s *Service) initializeLLMAndEmbedder(cfg *llm.Config) (llms.Model, embeddings.Embedder, error) {
 	if cfg == nil {
 		return nil, nil, fmt.Errorf("llm config is nil")
 	}
@@ -77,11 +68,13 @@ func initializeLLMAndEmbedder(cfg *llm.Config) (llms.Model, embeddings.Embedder,
 	}
 	return llm, embedder, nil
 }
-func initializeVectorStore(ctx context.Context, cfg vectorstore.VectorStoreConfig, embedder embeddings.Embedder) (vectorstore.VectorStore, error) {
+func (s *Service) initializeVectorStore(ctx context.Context, cfg *vectorstore.VectorStoreConfig, embedder embeddings.Embedder) (vectorstore.VectorStore, error) {
 	if cfg.Type == "" {
 		return nil, fmt.Errorf("vector store type is empty")
 	}
-
+	if embedder == nil {
+		return nil, fmt.Errorf("embedder is nil")
+	}
 	var store vectorstore.VectorStore
 	var err error
 
@@ -89,9 +82,15 @@ func initializeVectorStore(ctx context.Context, cfg vectorstore.VectorStoreConfi
 	case "milvus":
 		store = vectorstore.NewMilvusStore(&cfg.Milvus, embedder)
 	case "qdrant":
+		if err := cfg.Qdrant.Validate(); err != nil {
+			return nil, fmt.Errorf("invalid qdrant configuration: %w", err)
+		}
 		store = vectorstore.NewQdrantStore(&cfg.Qdrant, embedder)
 	default:
 		return nil, fmt.Errorf("unsupported vector store type: %s", cfg.Type)
+	}
+	if store == nil {
+		return nil, fmt.Errorf("store creation failed: store is nil after creation")
 	}
 
 	if err = store.Initialize(ctx); err != nil {
@@ -100,6 +99,7 @@ func initializeVectorStore(ctx context.Context, cfg vectorstore.VectorStoreConfi
 
 	return store, nil
 }
+
 func (s *Service) retrieveDocuments(ctx context.Context, query string, topK int) ([]schema.Document, error) {
 	if s.store == nil {
 		return nil, fmt.Errorf("store is not initialized")
@@ -111,6 +111,7 @@ func (s *Service) retrieveDocuments(ctx context.Context, query string, topK int)
 	}
 	return docs, nil
 }
+
 func (s *Service) RetrieveAnswer(ctx context.Context, query string, topK int) ([]string, error) {
 	// 1. Vector search for similar questions
 	docs, err := s.retrieveDocuments(ctx, query, topK)
@@ -183,6 +184,7 @@ func (s *Service) generateFinalResponse(ctx context.Context, query string, answe
 
 	return res.Choices[0].Content, nil
 }
+
 func (s *Service) QueryWithRetrieve(ctx context.Context, query string, topK int) (string, error) {
 	start := time.Now()
 	defer func() {
@@ -194,7 +196,6 @@ func (s *Service) QueryWithRetrieve(ctx context.Context, query string, topK int)
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve answers: %w", err)
 	}
-
 	// If no answers found, return default response
 	if len(answers) == 0 {
 		return "没有找到相关答案", nil
@@ -232,7 +233,6 @@ func (s *Service) StoreQA(ctx context.Context, question string, answer string) e
 }
 
 func (s *Service) GetStoredQuestions(ctx context.Context) ([]string, error) {
-	fmt.Println("###:")
 
 	rows, err := s.db.QueryContext(ctx, "SELECT question FROM qa_pairs ORDER BY created_at DESC")
 	if err != nil {

@@ -4,9 +4,9 @@ go 1.23.4
 
 require (
 	github.com/gin-gonic/gin v1.10.0
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/koding/multiconfig v0.0.0-20171124222453-69c27309b2d7
-	github.com/sirupsen/logrus v1.9.3
-	github.com/tiamxu/kit v0.0.0-20250204141037-b52111688b25
+	github.com/tiamxu/kit v0.0.0-20250209074912-d17f53979a6c
 	github.com/tmc/langchaingo v0.1.12
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 )
@@ -38,7 +38,6 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
-	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
@@ -54,6 +53,7 @@ require (
 	github.com/pkoukk/tiktoken-go v0.1.6 // indirect
 	github.com/qdrant/go-client v1.13.0 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect

@@ -1,12 +1,9 @@
 package main
 
 import (
-	"context"
-	"time"
+	"fmt"
+	"os"
 
-	"github.com/sirupsen/logrus"
-	"github.com/tiamxu/kairo/logic"
-	"github.com/tiamxu/kairo/logic/model"
 	"github.com/tiamxu/kit/llm"
 	"github.com/tiamxu/kit/log"
 	"github.com/tiamxu/kit/sql"
@@ -21,39 +18,47 @@ const configPath = "config/config.yaml"
 
 // yaml文件内容映射到结构体
 type Config struct {
-	ENV               string                        `yaml:"env"`
-	LogLevel          string                        `yaml:"log_level"`
-	HttpSrv           httpkit.GinServerConfig       `yaml:"http_srv"`
-	VectorStoreConfig vectorstore.VectorStoreConfig `yaml:"vector_store"`
-	LLMConfig         llm.Config                    `yaml:"models"`
-	DB                *sql.Config                   `yaml:"db" xml:"db" json:"db"`
+	ENV               string                         `yaml:"env"`
+	LogLevel          string                         `yaml:"log_level"`
+	HttpSrv           httpkit.GinServerConfig        `yaml:"http_srv"`
+	VectorStoreConfig *vectorstore.VectorStoreConfig `yaml:"vector_store"`
+	LLMConfig         *llm.Config                    `yaml:"models"`
+	DB                *sql.Config                    `yaml:"db" xml:"db" json:"db"`
 }
 
 // set log level
 func (c *Config) Initial() (err error) {
+
 	defer func() {
 		if err == nil {
 			log.Printf("config initialed, env: %s", cfg.ENV)
 		}
 	}()
 	//日志
-	if level, err := logrus.ParseLevel(c.LogLevel); err != nil {
-		return err
-	} else {
-		log.DefaultLogger().SetLevel(level)
-	}
-	// llm服务
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	_, err = logic.NewLLMService(ctx, &cfg.LLMConfig, cfg.VectorStoreConfig)
+	// if level, err := logrus.ParseLevel(c.LogLevel); err != nil {
+	// 	return err
+	// } else {
+	// 	log.DefaultLogger().SetLevel(level)
+	// }
+	err = log.InitLogger(&log.Config{
+		Level:      "info",
+		Type:       "stdout", // "file" 或 "stdout"
+		Format:     "json",   // "json" 或 "text"
+		FilePath:   "logs",
+		FileName:   "kairo.log",
+		MaxSize:    100, // 每个文件最大 100MB
+		MaxAge:     7,   // 保留7天
+		MaxBackups: 10,  // 保留10个备份
+		Compress:   true,
+	})
 	if err != nil {
-		log.Fatalf("Model service initialization failed: %v", err)
-
+		fmt.Printf("Failed to initialize logger: %v\n", err)
+		os.Exit(1)
 	}
-	//数据库
-	if err := model.Init(cfg.DB); err != nil {
-		return err
-	}
+	log.SetGlobalFields(log.Fields{
+		"appname": "kairo",
+		// "version": "1.0.0",
+	})
 	return nil
 }
 

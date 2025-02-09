@@ -3,6 +3,8 @@ log_level: debug
 http_srv:
   address: :8800
   keep_alive: true
+  read_timeout: 30s
+  write_timeout: 30s
   static_prefix: /static
   static_dir: ./static
 db:
@@ -16,8 +18,7 @@ db:
   max_open_conns: 10
   conn_max_lifetime: 3600
 vector_store:
-  type: "qdrant"  # 或 "qdrant",milvus
-  
+  type: qdrant  # 或 "qdrant",milvus
   milvus:
     address: "10.18.150.1:19530"
     db_name: "default"
@@ -26,12 +27,12 @@ vector_store:
       type: "HNSW"
       metric_type: "L2"
       nlist: 1024
-
   qdrant:
     address: "http://120.24.61.231:16333"
-    Host: "120.24.61.231"
-    Port: 16334
+    host: "120.24.61.231"
+    port: 16334
     collection: "qa"
+    api_key: "ZfYOjrdr2io25WUKvpdwnJ8gfvc"
 models:
   type: "aliyun"
   ollama:

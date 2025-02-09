@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/tiamxu/kit/llm"
 	"github.com/tiamxu/kit/log"
 	"github.com/tiamxu/kit/vectorstore"
@@ -16,6 +17,7 @@ type LLMService struct {
 	llm      llms.Model
 	embedder embeddings.Embedder
 	store    vectorstore.VectorStore
+	db       *sqlx.DB
 }
 
 //	func NewLLMService() *LLMService {
@@ -81,18 +83,10 @@ func initializeVectorStore(ctx context.Context, cfg vectorstore.VectorStoreConfi
 		return nil, fmt.Errorf("vector store type is empty")
 	}
 
-	var store vectorstore.VectorStore
-	var err error
-
-	switch cfg.Type {
-	case "milvus":
-		store = vectorstore.NewMilvusStore(&cfg.Milvus, embedder)
-	case "qdrant":
-		store = vectorstore.NewQdrantStore(&cfg.Qdrant, embedder)
-	default:
-		return nil, fmt.Errorf("unsupported vector store type: %s", cfg.Type)
+	store, err := vectorstore.NewVectorStore(&cfg, embedder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to new create vectorstore %s store: %w", cfg.Type, err)
 	}
-
 	if err = store.Initialize(ctx); err != nil {
 		return nil, fmt.Errorf("failed to initialize %s store: %w", cfg.Type, err)
 	}
