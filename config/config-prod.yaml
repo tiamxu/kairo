@@ -1,0 +1,49 @@
+env: prod
+log_level: debug
+http_srv:
+  address: :8080
+  keep_alive: true
+  read_timeout: 30s
+  write_timeout: 30s
+  static_prefix: /static
+  static_dir: ./static
+db:
+  driver: "mysql"
+  database: "test"
+  username: "root"
+  password: "JLZqwDlJi5rY8WM"
+  host: "172.16.0.140"
+  port: 13306
+  max_idle_conns: 5
+  max_open_conns: 10
+  conn_max_lifetime: 3600
+vector_store:
+  type: qdrant  # 或 "qdrant",milvus
+  milvus:
+    address: "10.18.150.1:19530"
+    db_name: "default"
+    collection: "qa"
+    index:
+      type: "HNSW"
+      metric_type: "L2"
+      nlist: 1024
+  qdrant:
+    address: "http://172.16.0.140:16333"
+    host: "172.16.0.140"
+    port: 16334
+    collection: "qa"
+    api_key: "ZfYOjrdr2io25WUKvpdwnJ8gfvc"
+models:
+  type: "aliyun"
+  ollama:
+    address: "http://192.168.1.228:11434"
+    llm_model: "qwen2.5:7b"
+    embedder_model: "nomic-embed-text:latest"
+    temperature: 0.8
+
+  aliyun:
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    api_key: "sk-dda0881c077849eea532a185e5731d28"
+    llm_model: "qwen-turbo"
+    embedding_model: "text-embedding-v3"
+

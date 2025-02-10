@@ -14,7 +14,7 @@ import (
 	httpkit "github.com/tiamxu/kit/http"
 )
 
-const configPath = "config/config.yaml"
+var configPath = "config/config.yaml"
 
 // yaml文件内容映射到结构体
 type Config struct {
@@ -65,5 +65,20 @@ func (c *Config) Initial() (err error) {
 // 读取配置文件
 func loadConfig() {
 	cfg = new(Config)
+
+	// env := os.Getenv("ENV")
+	env := "prod"
+
+	switch env {
+	case "dev":
+		configPath = "config/config-dev.yaml"
+	case "test":
+		configPath = "config/config-test.yaml"
+	case "prod":
+		configPath = "config/config-prod.yaml"
+	default:
+		configPath = "config/config.yaml"
+	}
+
 	multiconfig.MustLoadWithPath(configPath, cfg)
 }
