@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/tiamxu/kairo/logic/model"
+
 	"github.com/tiamxu/kit/llm"
 	"github.com/tiamxu/kit/log"
 	"github.com/tiamxu/kit/sql"
@@ -59,6 +61,11 @@ func (c *Config) Initial() (err error) {
 		"appname": "kairo",
 		// "version": "1.0.0",
 	})
+
+	if err = model.Init(cfg.DB); err != nil {
+		return nil
+	}
+
 	return nil
 }
 
