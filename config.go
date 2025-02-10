@@ -67,7 +67,7 @@ func loadConfig() {
 	cfg = new(Config)
 
 	// env := os.Getenv("ENV")
-	env := "prod"
+	env := "local"
 
 	switch env {
 	case "dev":
