@@ -199,4 +199,3 @@ func (s *Service) StoreQA(ctx context.Context, question string, answer string) e
 func (s *Service) GetStoredQuestions(ctx context.Context) ([]string, error) {
 	return model.GetStoredQuestions(ctx)
 }
-
