@@ -63,7 +63,8 @@ func (c *Config) Initial() (err error) {
 	})
 
 	if err = model.Init(cfg.DB); err != nil {
-		return nil
+		return fmt.Errorf("database initialization failed: %w", err)
+
 	}
 
 	return nil

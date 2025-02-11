@@ -4,28 +4,25 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
 	"github.com/tiamxu/kit/sql"
 )
 
-var db *sql.DB
+var (
+	QaPairsTableName = "\"qa_pairs\""
+)
 
-// InitDB 初始化数据库连接
-func InitDB(cfg *sql.Config) error {
-	if cfg == nil {
-		return fmt.Errorf("database config is nil")
-	}
+func (*QaPairs) TableName() string {
+	return QaPairsTableName
+}
 
-	var err error
-	db, err = sql.Connect(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
-	}
-	return nil
+func GetQaPairsDB() *sql.DB {
+	return mysqlHandler.DB
 }
 
 // StoreAnswer 存储问答到数据库
 func StoreAnswer(ctx context.Context, question string, answer string) (int64, error) {
-	result, err := db.ExecContext(ctx,
+	result, err := GetQaPairsDB().ExecContext(ctx,
 		"INSERT INTO qa_pairs (question, answer) VALUES (?, ?)",
 		question, answer)
 
@@ -41,7 +38,7 @@ func StoreAnswer(ctx context.Context, question string, answer string) (int64, er
 	return id, nil
 }
 
-// GetAnswersByIDs 根据ID列表获取答案
+// GetAnswersByIDs 根据ID列表获取提示词
 func GetAnswersByIDs(ctx context.Context, ids []int64) ([]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
@@ -55,7 +52,7 @@ func GetAnswersByIDs(ctx context.Context, ids []int64) ([]string, error) {
 
 	var answers []string
 	querySql := fmt.Sprintf("SELECT answer FROM qa_pairs WHERE id IN (%s)", idList)
-	err := db.SelectContext(ctx, &answers, querySql)
+	err := GetQaPairsDB().SelectContext(ctx, &answers, querySql)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query answers: %w", err)
 	}
@@ -66,8 +63,9 @@ func GetAnswersByIDs(ctx context.Context, ids []int64) ([]string, error) {
 func GetStoredQuestions(ctx context.Context) ([]string, error) {
 	questions := []string{}
 	query := "SELECT question FROM qa_pairs ORDER BY created_at DESC"
-	if err := db.SelectContext(ctx, &questions, query); err != nil {
+	if err := GetQaPairsDB().SelectContext(ctx, &questions, query); err != nil {
 		return nil, fmt.Errorf("failed to query questions: %w", err)
 	}
 	return questions, nil
 }
+
