@@ -36,25 +36,9 @@ func main() {
 
 	// 创建 handler
 	handler := api.NewHandler(modelService)
-	// HTTP 服务配置
-	// httpConfig := httpkit.GinServerConfig{
-	// 	Address:         cfg.HttpSrv.Address,
-	// 	KeepAlive:       true,
-	// 	ReadTimeout:     30 * time.Second,
-	// 	WriteTimeout:    30 * time.Second,
-	// 	AccessLogFormat: httpkit.DefaultAccessLogFormat,
-	// 	BodyLimit:       10 * 1024 * 1024, // 10MB
-	// 	CORSConfig: &httpkit.CORSConfig{
-	// 		AllowOrigins:     []string{"*"},
-	// 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	// 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
-	// 		AllowCredentials: true,
-	// 		MaxAge:           12 * time.Hour,
-	// 	},
-	// }
+
 	// 创建 gin 路由
 	router := httpkit.NewGin(cfg.HttpSrv)
-	// 添加请求ID中间件
 	// 添加中间件
 	router.Use(httpkit.TimeoutMiddleware(30 * time.Second))
 	router.Use(httpkit.RateLimitMiddleware(100, time.Minute))

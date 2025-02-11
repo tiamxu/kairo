@@ -49,11 +49,6 @@ func (s *Service) Initialize(ctx context.Context, cfg *llm.Config, vectorStoreCf
 		return fmt.Errorf("vector store initialization failed: %w", err)
 	}
 
-	// 初始化数据库
-	// if err := model.InitDB(dbConfig); err != nil {
-	// 	return fmt.Errorf("database initialization failed: %w", err)
-	// }
-
 	s.llm = llm
 	s.embedder = embedder
 	s.store = store
