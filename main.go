@@ -50,7 +50,7 @@ func main() {
 	// router.Static("/static", "./static")
 	// 启动服务器
 	srv := httpkit.StartServer(router, cfg.HttpSrv)
-	log.Infoln("Server listen: " + cfg.HttpSrv.Address)
+	log.Infoln("Server listen: ", cfg.HttpSrv.Address)
 
 	// 优雅关闭
 	quit := make(chan os.Signal, 1)

@@ -3,16 +3,27 @@ package model
 import (
 	"errors"
 	"strings"
+	"sync"
 
 	"github.com/tiamxu/kit/sql"
 	"gopkg.in/mgo.v2/bson"
 )
 
-var postgresHandler = sql.NewPreDB()
-var mysqlHandler = sql.NewPreDB()
-var clickHouseHandler = sql.NewPreDB()
+var (
+	postgresHandler   = sql.NewPreDB()
+	mysqlHandler      = sql.NewPreDB()
+	clickHouseHandler = sql.NewPreDB()
+	dbMutex           sync.RWMutex
+)
 
 func Init(cfg *sql.Config) error {
+	if cfg == nil {
+		return errors.New("config cannot be nil")
+	}
+
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
+
 	var err error
 	switch strings.ToLower(cfg.Driver) {
 	case "mysql":
@@ -25,56 +36,53 @@ func Init(cfg *sql.Config) error {
 		return errors.New("unknown driver")
 	}
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func GetMysqlDB() *sql.DB {
+	dbMutex.RLock()
+	defer dbMutex.RUnlock()
 	return mysqlHandler.DB
 }
 
 func GetPostgresDB() *sql.DB {
+	dbMutex.RLock()
+	defer dbMutex.RUnlock()
 	return postgresHandler.DB
 }
 
 func GetClickhouseDB() *sql.DB {
+	dbMutex.RLock()
+	defer dbMutex.RUnlock()
 	return clickHouseHandler.DB
 }
+
 func index(s string, sub ...string) int {
-	var i, ii = -1, -1
+	minIndex := -1
 	for _, ss := range sub {
-		ii = strings.Index(s, ss)
-		if ii != -1 && (ii < i || i == -1) {
-			i = ii
+		if idx := strings.Index(s, ss); idx != -1 && (minIndex == -1 || idx < minIndex) {
+			minIndex = idx
 		}
 	}
-	return i
+	return minIndex
 }
+
 func insertZeroDeletedTsField(whereCond string) string {
 	whereCond = strings.TrimSpace(whereCond)
 	whereCond = strings.TrimRight(whereCond, ";")
-	i := index(
-		whereCond,
-		"deleted_ts",
-		" deleted_ts",
-	)
-	if i != -1 {
+
+	if strings.Contains(whereCond, "deleted_ts") {
 		return whereCond
 	}
-	i = index(
-		whereCond,
-		"ORDER BY", "order by",
-		"GROUP BY", "group by",
-		"OFFSET", "offset",
-		"LIMIT", "limit",
-	)
-	if i == -1 {
+
+	keywords := []string{"ORDER BY", "order by", "GROUP BY", "group by", "OFFSET", "offset", "LIMIT", "limit"}
+
+	pos := index(whereCond, keywords...)
+
+	if pos == -1 {
 		return whereCond + " AND deleted_ts=0"
 	}
-	return whereCond[:i] + " AND deleted_ts=0 " + whereCond[i:]
+	return whereCond[:pos] + " AND deleted_ts=0 " + whereCond[pos:]
 }
 
 func insertZeroDeletedTsM(m bson.M) bson.M {
